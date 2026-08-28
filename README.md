@@ -2,7 +2,9 @@
 ### Initializing a Git repository
 
 ```git init -b main```
+## Clone Repo Shortcut
 
+```git clone https://github.com/Ben168-stack/TikTokCodeBash2026_Track_4_Shopping-Copilot```
 
 ### Set Up Git Repository on your Local Device:
 
