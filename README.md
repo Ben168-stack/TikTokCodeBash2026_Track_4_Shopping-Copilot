@@ -129,6 +129,46 @@ The command writes per-session results and aggregate metrics to `results.json`.
 The included weak BM25 starter scores Hit Rate@10 `0.125`, MRR `0.068034`, and
 MTTC `9.81` on the released public set. See `docs/baseline_results.json`.
 
+## Our Results
+
+`starter/agent.py` now contains our agent. On the 200-session public set, via the
+unmodified evaluator:
+
+| Metric | Weak starter | Ours |
+|---|---|---|
+| Hit Rate@10 | 0.125 | **1.000** |
+| MRR | 0.068034 | **0.949464** |
+| MTTC | 9.81 | **2.720** |
+| **TechnicalScore** | **0.106710** | **0.950439** |
+
+| Scenario | n | Hit Rate@10 | MRR | MTTC |
+|---|---|---|---|---|
+| buying | 80 | 1.000 | 0.964 | 2.49 |
+| browsing | 80 | 1.000 | 0.949 | 2.59 |
+| intent_override | 30 | 1.000 | 0.922 | 3.60 |
+| boundary | 10 | 1.000 | 0.917 | 3.00 |
+
+The agent is **fully offline and deterministic**: no LLM, no API keys, no network,
+$0.00 model cost, 0 reported tokens. Python standard library only. Index build is
+a one-off ~21 s (~64 MB); per-turn latency is ~19 ms mean / ~71 ms p95.
+
+How it works, in one line each:
+
+1. **Conversation state** - accumulates every disclosed preference across turns,
+   instead of re-querying on the latest message alone.
+2. **Category anchoring** - resolves the product category from the opening
+   message and searches that bucket.
+3. **Rarity-weighted matching** - exact phrase match scored by IDF, so a
+   distinctive feature outweighs boilerplate like "Imported".
+4. **Adaptive clarification** - asks on every turn, retries once after a
+   boundary deferral, tracks exhausted attributes.
+5. **Precision gate** - withholds the shortlist while the shopper still has
+   undisclosed preferences, because a hit locks in whatever rank was shown.
+
+Full write-up including cost/latency disclosure, tuning evidence, a paraphrase
+robustness study, and limitations: **`docs/report.md`**.
+Worked multi-turn transcripts for all four scenarios: **`docs/demo_session.md`**.
+
 ## Agent Interface
 
 ```python
@@ -178,7 +218,9 @@ docs/competition_specification.md participant rules and evaluation protocol
 docs/agent_api_contract.json      machine-readable Agent contract
 docs/evaluation_config.json       scoring configuration
 docs/baseline_results.json        reproducible weak-starter reference score
-starter/agent.py                  editable weak starter
+docs/report.md                    our technical report (architecture, cost, limits)
+docs/demo_session.md              worked transcripts, one per scenario type
+starter/agent.py                  our agent (entry point, exports `Agent`)
 evaluator/local_evaluator.py      public-set simulator and scorer
 ```
 
